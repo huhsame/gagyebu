@@ -9,9 +9,10 @@ import LedgerTable from "@/components/ledger-table";
 import SpendDonut from "@/components/spend-donut";
 import SummaryBand from "@/components/summary-band";
 import {
-  loadTxs,
+  deleteTx,
+  fetchTxs,
+  insertTx,
   monthLabel,
-  saveTxs,
   shiftMonth,
   toDateStr,
   type Tx,
@@ -22,20 +23,23 @@ export default function Home() {
   const [month, setMonth] = useState(""); // YYYY-MM
   const [today, setToday] = useState("");
   const [ready, setReady] = useState(false);
+  const [err, setErr] = useState("");
 
-  // 저장된 장부와 "오늘"은 서버에 없다. 마운트 직후 한 번만 읽어 초기화한다.
+  // "오늘"은 서버에 없다. 마운트 직후 한 번만 정한다.
   useEffect(() => {
     const now = toDateStr(new Date());
     // eslint-disable-next-line react-hooks/set-state-in-effect -- SSR 경계: 클라이언트 전용 값의 1회 주입
     setToday(now);
     setMonth(now.slice(0, 7));
-    setTxs(loadTxs());
     setReady(true);
   }, []);
 
+  // 장부 본문은 Supabase에서. 화면 틀은 이걸 기다리지 않는다.
   useEffect(() => {
-    if (ready) saveTxs(txs);
-  }, [txs, ready]);
+    fetchTxs()
+      .then(setTxs)
+      .catch(() => setErr("장부를 불러오지 못했어요. 새로고침 해보세요."));
+  }, []);
 
   const monthTxs = useMemo(
     () =>
@@ -141,18 +145,43 @@ export default function Home() {
           </div>
         </header>
 
+        {err && (
+          <p
+            role="alert"
+            className="mt-6 rounded-sm border border-cinnabar px-4 py-2.5 font-display text-[13px] text-cinnabar"
+            style={{ background: "rgba(239,106,74,0.08)" }}
+          >
+            {err}
+          </p>
+        )}
+
         <SummaryBand income={income} expense={expense} />
 
         <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <EntryForm
             today={today}
-            onAdd={(tx) =>
-              setTxs((prev) => [{ ...tx, id: crypto.randomUUID() }, ...prev])
-            }
+            onAdd={(draft) => {
+              // 화면에 먼저 얹고 DB에 보낸다. 실패하면 도로 뺀다.
+              const tx = { ...draft, id: crypto.randomUUID() };
+              setTxs((prev) => [tx, ...prev]);
+              setErr("");
+              insertTx(tx).catch(() => {
+                setTxs((prev) => prev.filter((t) => t.id !== tx.id));
+                setErr("저장에 실패했어요. 다시 넣어주세요.");
+              });
+            }}
           />
           <LedgerTable
             items={monthTxs}
-            onDelete={(id) => setTxs((prev) => prev.filter((t) => t.id !== id))}
+            onDelete={(id) => {
+              const backup = txs;
+              setTxs((prev) => prev.filter((t) => t.id !== id));
+              setErr("");
+              deleteTx(id).catch(() => {
+                setTxs(backup);
+                setErr("삭제에 실패했어요.");
+              });
+            }}
           />
         </div>
 
@@ -163,7 +192,7 @@ export default function Home() {
         </div>
 
         <footer className="mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-5 font-mono text-[10px] uppercase tracking-[0.25em] text-nacre-dim">
-          <span>기록은 이 브라우저에만 남습니다 · localStorage</span>
+          <span>기록은 supabase에 저장됩니다 · postgres</span>
           <span className="font-seal tracking-[0.4em]">螺 鈿</span>
         </footer>
       </main>

@@ -22,11 +22,12 @@ export default function CountUp({
     const to = value;
     if (from === to) return;
 
+    // 숨은 탭에서는 rAF가 멈춘다. 굴릴 수 없으면 그냥 값만 얹는다.
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
+    if (reduce || document.hidden) {
       fromRef.current = to;
-      rafRef.current = requestAnimationFrame(() => setShown(to));
-      return () => cancelAnimationFrame(rafRef.current);
+      const t = setTimeout(() => setShown(to), 0);
+      return () => clearTimeout(t);
     }
 
     const start = performance.now();

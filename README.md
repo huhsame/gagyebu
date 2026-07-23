@@ -1,6 +1,6 @@
 # 가계부 · 螺鈿帳簿
 
-수입·지출을 한 줄씩 적어두는 아주 단순한 가계부. 기록은 서버로 나가지 않고 **브라우저 localStorage에만** 남는다.
+수입·지출을 한 줄씩 적어두는 아주 단순한 가계부. 기록은 **Supabase(Postgres)** 에 남아서 기기를 바꿔도 따라온다.
 
 **→ https://huhsame-gagyebu.vercel.app**
 
@@ -36,7 +36,8 @@ npm run dev
 | --- | --- |
 | `src/app/page.tsx` | 상태(거래 목록·선택한 달)와 화면 조립 |
 | `src/app/globals.css` | 테마 변수 · 옻칠 표면 · 모션 정의 |
-| `src/lib/ledger.ts` | 타입 · 카테고리 · localStorage 입출력 · 집계 · 포맷 |
+| `src/lib/ledger.ts` | 타입 · 카테고리 · Supabase 입출력 · 집계 · 포맷 |
+| `src/lib/supabase.ts` | Supabase 브라우저 클라이언트 |
 | `src/hooks/use-tilt.ts` | 마우스 위치 → 기울기·광원 CSS 변수 |
 | `src/components/entry-form.tsx` | 기입 폼 |
 | `src/components/summary-band.tsx` | 월 합계 카드 3장 |
@@ -51,6 +52,7 @@ Next.js 16 (App Router · Turbopack) + React 19 + Tailwind v4.
 
 ## 메모
 
-- 데이터는 `ggb.ledger.v1` 키로 저장된다. 브라우저를 바꾸면 따라가지 않는다.
-- 서버·DB·로그인은 없다. 여러 기기에서 쓰려면 그때 붙이면 된다.
+- 데이터는 Supabase `public.transactions` 테이블에 쌓인다. `.env.local`에 `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`가 있어야 뜬다.
+- 로그인은 없다. RLS는 켜져 있지만 anon 롤에 읽기·쓰기·삭제를 다 열어둬서, 주소를 아는 사람은 누구나 같은 장부를 본다. 남한테 보여줄 물건이 되면 Supabase Auth를 붙이고 정책을 `auth.uid()` 기준으로 조여야 한다.
+- 화면에 먼저 반영하고 DB에 보내는 낙관적 업데이트다. 실패하면 되돌리고 붉은 줄로 알린다.
 - dev 스크립트는 HTTP 헤더 한도를 64KB로 올려 띄운다. localhost 쿠키는 포트를 가리지 않아서 다른 dev 서버들이 쌓아둔 쿠키까지 함께 실려오고, Node 기본값 16KB를 넘으면 431이 난다.

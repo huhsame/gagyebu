@@ -1,3 +1,5 @@
+import { supabase } from "@/lib/supabase";
+
 export type Kind = "income" | "expense";
 
 export type Tx = {
@@ -14,21 +16,26 @@ export const CATEGORIES: Record<Kind, string[]> = {
   expense: ["식비", "카페", "교통", "주거", "쇼핑", "문화", "의료", "경조사", "기타"],
 };
 
-const KEY = "ggb.ledger.v1";
+const TABLE = "transactions";
 
-export function loadTxs(): Tx[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as Tx[]) : [];
-  } catch {
-    return [];
-  }
+export async function fetchTxs(): Promise<Tx[]> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("id, date, kind, category, amount, memo")
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as Tx[];
 }
 
-export function saveTxs(txs: Tx[]) {
-  localStorage.setItem(KEY, JSON.stringify(txs));
+export async function insertTx(tx: Tx) {
+  const { error } = await supabase.from(TABLE).insert(tx);
+  if (error) throw error;
+}
+
+export async function deleteTx(id: string) {
+  const { error } = await supabase.from(TABLE).delete().eq("id", id);
+  if (error) throw error;
 }
 
 export const won = (n: number) => n.toLocaleString("ko-KR");
