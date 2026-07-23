@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 가계부 · 家計簿
 
-## Getting Started
-
-First, run the development server:
+수입·지출을 한 줄씩 적어두는 아주 단순한 가계부. 기록은 서버로 나가지 않고 **브라우저 localStorage에만** 남는다.
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+→ http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 할 수 있는 것
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 지출 / 수입 기입 (날짜 · 카테고리 · 금액 · 메모)
+- 달 단위로 넘겨보기 (`‹` `›`, "this month"로 복귀)
+- 그 달의 수입 · 지출 · 남은 돈 합계
+- 기록 지우기 (행 오른쪽 ✕)
 
-## Learn More
+## 구조
 
-To learn more about Next.js, take a look at the following resources:
+| 경로 | 역할 |
+| --- | --- |
+| `src/app/page.tsx` | 상태(거래 목록·선택한 달)와 화면 조립 |
+| `src/lib/ledger.ts` | 타입 · 카테고리 · localStorage 입출력 · 포맷 |
+| `src/components/entry-form.tsx` | 기입 영수증 |
+| `src/components/summary-band.tsx` | 월 합계 |
+| `src/components/ledger-table.tsx` | 장부 목록 |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Next.js 16 (App Router · Turbopack) + React 19 + Tailwind v4.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 메모
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 데이터는 `ggb.ledger.v1` 키로 저장된다. 브라우저를 바꾸면 따라가지 않는다.
+- 서버·DB·로그인은 없다. 여러 기기에서 쓰려면 그때 붙이면 된다.

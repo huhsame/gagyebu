@@ -1,65 +1,131 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import EntryForm from "@/components/entry-form";
+import LedgerTable from "@/components/ledger-table";
+import SummaryBand from "@/components/summary-band";
+import {
+  loadTxs,
+  monthLabel,
+  saveTxs,
+  shiftMonth,
+  toDateStr,
+  type Tx,
+} from "@/lib/ledger";
 
 export default function Home() {
+  const [txs, setTxs] = useState<Tx[]>([]);
+  const [month, setMonth] = useState(""); // YYYY-MM
+  const [today, setToday] = useState("");
+  const [ready, setReady] = useState(false);
+
+  // 저장된 장부와 "오늘"은 서버에 없다. 마운트 직후 한 번만 읽어 초기화한다.
+  useEffect(() => {
+    const now = toDateStr(new Date());
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- SSR 경계: 클라이언트 전용 값의 1회 주입
+    setToday(now);
+    setMonth(now.slice(0, 7));
+    setTxs(loadTxs());
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (ready) saveTxs(txs);
+  }, [txs, ready]);
+
+  const monthTxs = useMemo(
+    () =>
+      txs
+        .filter((t) => t.date.startsWith(month))
+        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+    [txs, month],
+  );
+
+  const income = monthTxs
+    .filter((t) => t.kind === "income")
+    .reduce((s, t) => s + t.amount, 0);
+  const expense = monthTxs
+    .filter((t) => t.kind === "expense")
+    .reduce((s, t) => s + t.amount, 0);
+
+  const isThisMonth = month === today.slice(0, 7);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main
+      className="mx-auto w-full max-w-5xl px-5 py-10 transition-opacity duration-500 sm:px-8 md:py-16"
+      style={{ opacity: ready ? 1 : 0 }}
+    >
+      {/* 표제 */}
+      <header className="anim-rise flex flex-wrap items-end justify-between gap-y-6">
+        <div className="relative">
+          <p className="font-display text-[11px] tracking-[0.55em] text-ink-soft">
+            家計簿
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <h1 className="mt-1 font-display text-5xl leading-none tracking-[0.08em] sm:text-6xl">
+            가계부
+          </h1>
+          <span
+            aria-hidden
+            className="anim-stamp absolute -right-11 -top-3 hidden h-11 w-11 rotate-[-9deg] items-center justify-center rounded-full border-2 border-vermilion font-display text-lg text-vermilion opacity-90 sm:flex"
+            style={{ animationDelay: "560ms" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            記
+          </span>
         </div>
-      </main>
-    </div>
+
+        {/* 달 넘기기 */}
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setMonth((m) => shiftMonth(m, -1))}
+            aria-label="이전 달"
+            className="px-2 pb-1 font-display text-2xl text-ink-soft transition-colors hover:text-ink"
+          >
+            ‹
+          </button>
+          <div className="min-w-[7.5rem] text-center">
+            <div className="font-display text-xl tracking-[0.1em]">
+              {monthLabel(month) || " "}
+            </div>
+            {ready && !isThisMonth && (
+              <button
+                type="button"
+                onClick={() => setMonth(today.slice(0, 7))}
+                className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-soft underline decoration-rule underline-offset-4 transition-colors hover:text-vermilion"
+              >
+                this month
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setMonth((m) => shiftMonth(m, 1))}
+            aria-label="다음 달"
+            className="px-2 pb-1 font-display text-2xl text-ink-soft transition-colors hover:text-ink"
+          >
+            ›
+          </button>
+        </div>
+      </header>
+
+      <SummaryBand income={income} expense={expense} />
+
+      <div className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-10 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-12">
+        <EntryForm
+          today={today}
+          onAdd={(tx) =>
+            setTxs((prev) => [{ ...tx, id: crypto.randomUUID() }, ...prev])
+          }
+        />
+        <LedgerTable
+          items={monthTxs}
+          onDelete={(id) => setTxs((prev) => prev.filter((t) => t.id !== id))}
+        />
+      </div>
+
+      <footer className="mt-16 border-t border-rule pt-5 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft/70">
+        기록은 이 브라우저에만 남습니다 · localStorage
+      </footer>
+    </main>
   );
 }

@@ -1,26 +1,145 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-paper: #efe9db;
+  --color-paper-2: #e7dfcb;
+  --color-paper-3: #dbd1b6;
+  --color-ink: #23201a;
+  --color-ink-soft: #6d6354;
+  --color-rule: #cec3a8;
+  --color-vermilion: #b03a2b;
+  --color-pine: #1f5d50;
+  --color-gold: #9d7c37;
+
+  --font-display: var(--font-song-myung), "Apple SD Gothic Neo", serif;
+  --font-sans: var(--font-plex-kr), "Apple SD Gothic Neo", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--color-paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  background-color: var(--color-paper);
+  /* 종이 결: 미세 모눈 + 상단 광원 */
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 252, 240, 0.9) 0%, rgba(255, 252, 240, 0) 60%),
+    linear-gradient(rgba(120, 100, 60, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 100, 60, 0.055) 1px, transparent 1px);
+  background-size: 100% 100%, 26px 26px, 26px 26px;
+}
+
+/* 종이 그레인 오버레이 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* ── 폼 요소 공통(종이 위의 밑줄 기입란) ───────────────── */
+.field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule);
+  padding: 0.45rem 0.15rem;
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.field:focus {
+  border-bottom-color: var(--color-ink);
+  background-color: rgba(255, 253, 245, 0.55);
+}
+.field::placeholder {
+  color: color-mix(in srgb, var(--color-ink-soft) 55%, transparent);
+}
+select.field {
+  appearance: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+input[type="date"].field::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+/* 영수증 하단 톱니 */
+.receipt-edge {
+  --tooth: 12px;
+  -webkit-mask-image:
+    linear-gradient(#000 0 0),
+    radial-gradient(var(--tooth) var(--tooth) at 50% 0, transparent 68%, #000 70%);
+  -webkit-mask-size: 100% calc(100% - var(--tooth)), calc(var(--tooth) * 2) var(--tooth);
+  -webkit-mask-position: top left, bottom left;
+  -webkit-mask-repeat: no-repeat, repeat-x;
+  mask-image:
+    linear-gradient(#000 0 0),
+    radial-gradient(var(--tooth) var(--tooth) at 50% 0, transparent 68%, #000 70%);
+  mask-size: 100% calc(100% - var(--tooth)), calc(var(--tooth) * 2) var(--tooth);
+  mask-position: top left, bottom left;
+  mask-repeat: no-repeat, repeat-x;
+}
+
+/* ── 모션 ─────────────────────────────────────────────── */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.5) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.96) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes slip {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-rise {
+  animation: rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.anim-stamp {
+  animation: stamp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.anim-slip {
+  animation: slip 0.34s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-stamp,
+  .anim-slip {
+    animation: none;
+  }
 }
