@@ -1,145 +1,435 @@
 @import "tailwindcss";
 
-@theme {
-  --color-paper: #efe9db;
-  --color-paper-2: #e7dfcb;
-  --color-paper-3: #dbd1b6;
-  --color-ink: #23201a;
-  --color-ink-soft: #6d6354;
-  --color-rule: #cec3a8;
-  --color-vermilion: #b03a2b;
-  --color-pine: #1f5d50;
-  --color-gold: #9d7c37;
+/* ══════════════════════════════════════════════════════════════
+   螺鈿帳簿 · 나전칠기 장부
+   흑칠(黑漆) 바탕 · 자개 이리데슨스 · 금박 · 단청 오채
+   ══════════════════════════════════════════════════════════════ */
 
-  --font-display: var(--font-song-myung), "Apple SD Gothic Neo", serif;
+@theme {
+  /* 옻칠 바탕 */
+  --color-lacquer: #100c0a;
+  --color-lacquer-2: #191310;
+  --color-lacquer-3: #241b16;
+
+  /* 자개 빛 (텍스트) */
+  --color-nacre: #f5f1e7;
+  --color-nacre-soft: #b8ad9e;
+  --color-nacre-dim: #8b8073;
+
+  /* 금박 */
+  --color-gold: #e0b354;
+  --color-gold-hi: #ffe6a8;
+  --color-gold-lo: #8a672a;
+
+  /* 단청 오채 */
+  --color-cinnabar: #ef6a4a;
+  --color-jade: #4fd4ab;
+  --color-lapis: #6f9dff;
+  --color-plum: #e07ac0;
+
+  --color-rule: #3a2e26;
+
+  --font-display: var(--font-myeongjo), "Apple SD Gothic Neo", serif;
+  --font-seal: var(--font-song-myung), "Apple SD Gothic Neo", serif;
   --font-sans: var(--font-plex-kr), "Apple SD Gothic Neo", sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 html {
-  background-color: var(--color-paper);
+  background-color: var(--color-lacquer);
+  color-scheme: dark;
 }
 
 body {
-  color: var(--color-ink);
+  color: var(--color-nacre);
   font-family: var(--font-sans);
-  background-color: var(--color-paper);
-  /* 종이 결: 미세 모눈 + 상단 광원 */
-  background-image:
-    radial-gradient(120% 80% at 50% -10%, rgba(255, 252, 240, 0.9) 0%, rgba(255, 252, 240, 0) 60%),
-    linear-gradient(rgba(120, 100, 60, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 100, 60, 0.055) 1px, transparent 1px);
-  background-size: 100% 100%, 26px 26px, 26px 26px;
+  background-color: var(--color-lacquer);
+  overflow-x: hidden;
 }
 
-/* 종이 그레인 오버레이 */
+::selection {
+  background: color-mix(in srgb, var(--color-gold) 35%, transparent);
+  color: var(--color-gold-hi);
+}
+
+/* ── 옻칠 표면 텍스처 ──────────────────────────────────────────
+   미세 결 + 상단 광원. 자개 오로라는 backdrop 레이어에서 따로. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 50;
-  opacity: 0.32;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  z-index: 60;
+  opacity: 0.34;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
 }
 
-/* ── 폼 요소 공통(종이 위의 밑줄 기입란) ───────────────── */
+/* 상하 비네트 — 칠기함 안쪽 느낌 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  background:
+    radial-gradient(130% 90% at 50% -20%, rgba(255, 226, 170, 0.11), transparent 55%),
+    radial-gradient(120% 100% at 50% 125%, rgba(0, 0, 0, 0.6), transparent 62%);
+}
+
+/* ══ 자개 오로라 ═══════════════════════════════════════════════ */
+@keyframes nacre-drift {
+  0% {
+    transform: translate3d(-6%, -3%, 0) rotate(0deg) scale(1.15);
+  }
+  33% {
+    transform: translate3d(5%, 4%, 0) rotate(120deg) scale(1.35);
+  }
+  66% {
+    transform: translate3d(-3%, 6%, 0) rotate(240deg) scale(1.2);
+  }
+  100% {
+    transform: translate3d(-6%, -3%, 0) rotate(360deg) scale(1.15);
+  }
+}
+
+@keyframes nacre-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.nacre-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px) saturate(1.6);
+  /* 어두운 옻칠 위에서 색이 죽지 않도록 더해서 올린다 */
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  animation:
+    nacre-drift var(--dur, 26s) linear infinite,
+    nacre-breathe calc(var(--dur, 26s) / 2.4) ease-in-out infinite;
+}
+
+/* ══ 금박 텍스트 ═══════════════════════════════════════════════ */
+@keyframes gilt-sweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.gilt {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-gold-lo) 0%,
+    var(--color-gold) 22%,
+    var(--color-gold-hi) 38%,
+    #fffdf6 46%,
+    var(--color-gold-hi) 54%,
+    var(--color-gold) 72%,
+    var(--color-gold-lo) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gilt-sweep 7s linear infinite;
+}
+
+/* 자개 무지개 텍스트 */
+.iridescent {
+  background-image: linear-gradient(
+    100deg,
+    #9fe9ff 0%,
+    #b6a6ff 18%,
+    #ffb3e6 34%,
+    #ffe9a8 50%,
+    #a8ffd8 66%,
+    #9fd4ff 82%,
+    #c9b0ff 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gilt-sweep 11s linear infinite;
+}
+
+/* ══ 칠기 표면 카드(글래스) ════════════════════════════════════ */
+.lacquer-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 2px;
+  background: linear-gradient(155deg, rgba(58, 44, 35, 0.36), rgba(14, 10, 8, 0.56));
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow:
+    0 1px 0 rgba(255, 233, 190, 0.2) inset,
+    0 0 0 1px rgba(224, 179, 84, 0.22),
+    0 28px 60px -30px rgba(0, 0, 0, 0.95),
+    0 6px 30px -14px rgba(224, 179, 84, 0.22);
+}
+
+/* 카드 표면을 스치는 광택 */
+.lacquer-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 240, 205, 0.07) 47%,
+    rgba(255, 255, 255, 0.11) 50%,
+    rgba(160, 220, 255, 0.06) 54%,
+    transparent 63%
+  );
+  background-size: 260% 260%;
+  animation: sheen 9s ease-in-out infinite;
+}
+
+@keyframes sheen {
+  0%,
+  100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+/* 모서리 금박 브래킷 */
+.gilt-corners::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  border-radius: 1px;
+  background:
+    linear-gradient(var(--color-gold), var(--color-gold)) 0 0 / 18px 1px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 0 0 / 1px 18px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 100% 0 / 18px 1px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 100% 0 / 1px 18px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 0 100% / 18px 1px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 0 100% / 1px 18px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 100% 100% / 18px 1px no-repeat,
+    linear-gradient(var(--color-gold), var(--color-gold)) 100% 100% / 1px 18px no-repeat;
+  opacity: 0.5;
+}
+
+/* 3D 틸트 — 마우스 추적값을 --rx/--ry로 주입 */
+.tilt {
+  transform: perspective(1100px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ══ 폼 요소 ═══════════════════════════════════════════════════ */
 .field {
   width: 100%;
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--color-rule);
-  padding: 0.45rem 0.15rem;
+  padding: 0.5rem 0.15rem;
   font-size: 0.95rem;
-  color: var(--color-ink);
+  color: var(--color-nacre);
   outline: none;
-  transition: border-color 0.18s ease, background-color 0.18s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 .field:focus {
-  border-bottom-color: var(--color-ink);
-  background-color: rgba(255, 253, 245, 0.55);
+  border-bottom-color: var(--color-gold);
+  box-shadow: 0 6px 18px -14px var(--color-gold);
+  background-color: rgba(255, 226, 170, 0.045);
 }
 .field::placeholder {
-  color: color-mix(in srgb, var(--color-ink-soft) 55%, transparent);
+  color: var(--color-nacre-dim);
 }
 select.field {
   appearance: none;
   border-radius: 0;
   cursor: pointer;
 }
+select.field option {
+  background: var(--color-lacquer-2);
+  color: var(--color-nacre);
+}
 input[type="date"].field::-webkit-calendar-picker-indicator {
-  opacity: 0.45;
+  filter: invert(1) sepia(1) saturate(3) hue-rotate(5deg);
+  opacity: 0.5;
   cursor: pointer;
 }
 
-/* 영수증 하단 톱니 */
-.receipt-edge {
-  --tooth: 12px;
-  -webkit-mask-image:
-    linear-gradient(#000 0 0),
-    radial-gradient(var(--tooth) var(--tooth) at 50% 0, transparent 68%, #000 70%);
-  -webkit-mask-size: 100% calc(100% - var(--tooth)), calc(var(--tooth) * 2) var(--tooth);
-  -webkit-mask-position: top left, bottom left;
-  -webkit-mask-repeat: no-repeat, repeat-x;
-  mask-image:
-    linear-gradient(#000 0 0),
-    radial-gradient(var(--tooth) var(--tooth) at 50% 0, transparent 68%, #000 70%);
-  mask-size: 100% calc(100% - var(--tooth)), calc(var(--tooth) * 2) var(--tooth);
-  mask-position: top left, bottom left;
-  mask-repeat: no-repeat, repeat-x;
-}
-
-/* ── 모션 ─────────────────────────────────────────────── */
+/* ══ 모션 ══════════════════════════════════════════════════════ */
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(22px) scale(0.985);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
     transform: none;
+    filter: blur(0);
   }
 }
+
 @keyframes stamp {
   0% {
     opacity: 0;
-    transform: scale(1.5) rotate(-8deg);
+    transform: scale(1.9) rotate(-14deg);
+    filter: blur(3px);
   }
-  60% {
+  55% {
     opacity: 1;
-    transform: scale(0.96) rotate(1deg);
+    transform: scale(0.9) rotate(3deg);
+    filter: blur(0);
+  }
+  75% {
+    transform: scale(1.06) rotate(-1deg);
   }
   100% {
     opacity: 1;
     transform: scale(1) rotate(0deg);
   }
 }
+
 @keyframes slip {
   from {
     opacity: 0;
-    transform: translateX(-10px);
+    transform: translateX(-16px);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: none;
+    filter: blur(0);
+  }
+}
+
+/* 먹 번지듯 아래로 열리는 리빌 */
+@keyframes ink-open {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.06);
   }
 }
 
 .anim-rise {
-  animation: rise 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .anim-stamp {
-  animation: stamp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: stamp 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .anim-slip {
-  animation: slip 0.34s ease-out both;
+  animation: slip 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.anim-ink {
+  animation: ink-open 0.9s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+.anim-glow {
+  animation: glow-pulse 3.4s ease-in-out infinite;
 }
 
+/* 리스트 행 위로 지나가는 금빛 스윕 */
+.row-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.row-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 226, 170, 0.12) 45%,
+    rgba(255, 245, 215, 0.2) 50%,
+    rgba(255, 226, 170, 0.12) 55%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.row-sweep:hover::after {
+  transform: translateX(100%);
+}
+
+/* 스크롤바도 금박으로 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-lacquer);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--color-gold-lo), var(--color-rule));
+  border-radius: 99px;
+  border: 2px solid var(--color-lacquer);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(var(--color-gold), var(--color-gold-lo));
+}
+
+/* ══ 접근성: 모션 끄기 ═════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .anim-rise,
   .anim-stamp,
-  .anim-slip {
-    animation: none;
+  .anim-slip,
+  .anim-ink,
+  .anim-glow,
+  .gilt,
+  .iridescent,
+  .nacre-blob,
+  .lacquer-card::before {
+    animation: none !important;
+  }
+  .anim-rise,
+  .anim-slip,
+  .anim-ink,
+  .anim-stamp {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+  }
+  .tilt {
+    transform: none !important;
+  }
+  .row-sweep::after {
+    display: none;
+  }
+  /* 도넛 호와 막대는 transition으로 자란다 — 그것도 같이 끈다 */
+  svg circle,
+  [class*="transition-all"] {
+    transition: none !important;
   }
 }

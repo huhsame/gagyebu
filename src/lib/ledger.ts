@@ -53,6 +53,45 @@ export function monthLabel(month: string) {
   return `${y}년 ${Number(m)}월`;
 }
 
+/** 카테고리별 합계 — 큰 것부터. 도넛 차트용. */
+export function byCategory(txs: Tx[], kind: Kind) {
+  const sums = new Map<string, number>();
+  for (const t of txs) {
+    if (t.kind !== kind) continue;
+    sums.set(t.category, (sums.get(t.category) ?? 0) + t.amount);
+  }
+  const total = [...sums.values()].reduce((s, v) => s + v, 0);
+  return {
+    total,
+    slices: [...sums.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([category, amount]) => ({
+        category,
+        amount,
+        ratio: total ? amount / total : 0,
+      })),
+  };
+}
+
+/** 그 달 1일~말일 일별 수입·지출. 막대그래프용. */
+export function byDay(txs: Tx[], month: string) {
+  if (!month) return [];
+  const [y, m] = month.split("-").map(Number);
+  const days = new Date(y, m, 0).getDate();
+  const rows = Array.from({ length: days }, (_, i) => ({
+    day: i + 1,
+    income: 0,
+    expense: 0,
+  }));
+  for (const t of txs) {
+    const d = Number(t.date.slice(8, 10));
+    const row = rows[d - 1];
+    if (!row) continue;
+    row[t.kind] += t.amount;
+  }
+  return rows;
+}
+
 export function dayLabel(date: string) {
   const [, m, d] = date.split("-");
   const weekday = ["일", "월", "화", "수", "목", "금", "토"][
