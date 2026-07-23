@@ -2,11 +2,15 @@
 
 수입·지출을 한 줄씩 적어두는 아주 단순한 가계부. 기록은 서버로 나가지 않고 **브라우저 localStorage에만** 남는다.
 
+**→ https://huhsame-gagyebu.vercel.app**
+
 ```bash
 npm run dev
 ```
 
 → http://localhost:3000
+
+`main`에 push하면 Vercel이 알아서 프로덕션에 다시 올린다.
 
 ## 할 수 있는 것
 
